@@ -1,6 +1,6 @@
 use std::ptr::null_mut;
 
-use ash::Instance
+use ash::Instance;
 
 pub struct Renderer {
     pub instance: Option<Instance>,
