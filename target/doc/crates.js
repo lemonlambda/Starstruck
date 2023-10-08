@@ -1,1 +1,0 @@
-window.ALL_CRATES = ["proc_macro2","quote","starstruck","syn","thiserror","thiserror_impl","unicode_ident","vk_sys"];
