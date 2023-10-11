@@ -219,6 +219,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
 
 [[package]]
+name = "dyn-clone"
+version = "1.0.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23d2f3407d9a573d666de4b5bdf10569d73ca9478087346697dcbae6244bfbcd"
+
+[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -674,10 +680,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "starry-ecs"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "512f4ad6c7c028b94e18a546ba66027b755d91e30d745524d49cdf8d5bfa0d62"
+dependencies = [
+ "dyn-clone",
+]
+
+[[package]]
 name = "starstruck"
 version = "0.1.0"
 dependencies = [
  "ash",
+ "starry-ecs",
  "thiserror",
  "vk-sys",
  "winit",
