@@ -31,7 +31,7 @@
         pkgsCross.mingwW64.buildPackages.gcc
         glibc_multi
         openssl
-        rust-analyzer-nightly
+       # rust-analyzer-nightly
 
         cmake
         glfw-wayland
