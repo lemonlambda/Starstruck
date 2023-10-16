@@ -1,7 +1,6 @@
-use starry_ecs::World;
 use starstruck::StarstruckEngine;
 
-#[test]
-fn adding_engine_resource() {
-    World::new().add_resource(StarstruckEngine::new("Adding Engine Resource"));
+#[tokio::test]
+async fn adding_engine_resource() {
+    StarstruckEngine::new("Simple Test").run().await;
 }

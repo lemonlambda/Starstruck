@@ -1215,9 +1215,9 @@ dependencies = [
 
 [[package]]
 name = "starry-ecs"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad854b7f73b21ccf70627e6b9f630a938c71d8288f00f9937805772c926a4ae2"
+checksum = "5b6ce85b08b591c25fa0c64eccb75c1c675ce7e34396219ca57fcec4de45b78b"
 dependencies = [
  "dyn-clone",
  "parking_lot",
