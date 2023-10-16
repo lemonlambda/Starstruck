@@ -3,5 +3,5 @@ use starstruck::StarstruckEngine;
 
 #[test]
 fn adding_engine_resource() {
-    World::new().add_resource(StarstruckEngine::new());
+    World::new().add_resource(StarstruckEngine::new("Adding Engine Resource"));
 }
