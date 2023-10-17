@@ -8,7 +8,7 @@ use wgpu::Instance;
 use winit::event_loop::{EventLoopBuilder, EventLoop, ControlFlow};
 use winit::platform::wayland::EventLoopBuilderExtWayland;
 use winit::window::WindowBuilder;
-use winit::event::{Event, WindowEvent};
+use winit::event::{Event, WindowEvent, ElementState, VirtualKeyCode, KeyboardInput};
 
 #[derive(Clone)]
 pub struct StarstruckEngine {
@@ -43,5 +43,23 @@ async fn run_winit() {
     let event_loop = EventLoop::new();
     let window = winit::window::Window::new(&event_loop).unwrap();
 
-
+    event_loop.run(move |event, _, control_flow| match event {
+        Event::WindowEvent {
+            ref event,
+            window_id,
+        } if window_id == window.id() => match event {
+            WindowEvent::CloseRequested
+            | WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        state: ElementState::Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Escape),
+                        ..
+                    },
+                ..
+            } => *control_flow = ControlFlow::Exit,
+            _ => {}
+        },
+        _ => {}
+    });
 }
