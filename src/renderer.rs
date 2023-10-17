@@ -1,5 +1,10 @@
-use wgpu::{Surface, Device, Queue, SurfaceConfiguration, Instance, InstanceDescriptor, Backends, TextureUsages, DeviceDescriptor, SurfaceError, TextureViewDescriptor, CommandEncoderDescriptor, Color, RenderPassColorAttachment};
+use crate::helpers::rgba;
+use crate::shapes::{Vertex, Rectangle, Cube};
+
+use wgpu::{Surface, Device, Queue, SurfaceConfiguration, Instance, InstanceDescriptor, Backends, TextureUsages, DeviceDescriptor, SurfaceError, TextureViewDescriptor, CommandEncoderDescriptor, Color, RenderPassColorAttachment, Operations, LoadOp, RenderPipeline, ShaderModuleDescriptor, ShaderSource, include_wgsl, Buffer};
+use wgpu::util::DeviceExt;
 use winit::{dpi::PhysicalSize, window::Window, event::WindowEvent};
+
 
 pub struct Renderer {
     pub(crate) surface: Surface,
@@ -7,9 +12,15 @@ pub struct Renderer {
     pub(crate) queue: Queue,
     pub(crate) surface_configuration: SurfaceConfiguration,
     pub(crate) size: PhysicalSize<u32>,
+    pub(crate) render_pipeline: RenderPipeline,
 
     // Window must be dropped after the surface
-    pub(crate) window: Window
+    pub(crate) window: Window,
+    // Color/Vertices
+    pub(crate) color: Color,
+    pub(crate) num_vertices: u32,
+    pub(crate) indices: u32,
+    pub(crate) vertex_buffer: Buffer,
 }
  
 impl Renderer {
@@ -60,6 +71,70 @@ impl Renderer {
             view_formats: vec![],
         };
         surface.configure(&device, &config);
+
+        let shader = device.create_shader_module(include_wgsl!("shader.wgsl"));
+        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Render Pipeline Layout"),
+            bind_group_layouts: &[],
+            push_constant_ranges: &[],
+        });
+        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Render Pipeline"),
+            layout: Some(&render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: "vs_main", // 1.
+                buffers: &[
+                    Vertex::desc()
+                ], // 2.
+            },
+            fragment: Some(wgpu::FragmentState { // 3.
+                module: &shader,
+                entry_point: "fs_main",
+                targets: &[Some(wgpu::ColorTargetState { // 4.
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList, // 1.
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw, // 2.
+                cull_mode: Some(wgpu::Face::Back),
+                // Setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
+                polygon_mode: wgpu::PolygonMode::Fill,
+                // Requires Features::DEPTH_CLIP_CONTROL
+                unclipped_depth: false,
+                // Requires Features::CONSERVATIVE_RASTERIZATION
+                conservative: false,
+            },
+            depth_stencil: None, // 1.
+            multisample: wgpu::MultisampleState {
+                count: 1, // 2.
+                mask: !0, // 3.
+                alpha_to_coverage_enabled: false, // 4.
+            },
+            multiview: None, // 5.
+        });
+
+        let (rectangle, indices) = Rectangle::new((0.25, 0.25, 0.5), (0.5, 0.5, -0.5), 1.0, rgba(255, 180, 180, 255), rgba(180, 180, 255, 255)).rotate(45.0, 0.0, 0.0).into_raw();
+        println!("{:#?}", rectangle);
+        let vertex_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(rectangle.as_slice()),
+                usage: wgpu::BufferUsages::VERTEX,
+            },
+        );
+        let (r, g, b, a) = rgba(255, 255, 255, 255);
+        let clear_color = wgpu::Color {
+            r: r.into(),
+            g: g.into(),
+            b: b.into(),
+            a: a.into(),
+        };
+        let num_vertices = rectangle.len() as u32;
         
         Self { 
             surface,
@@ -67,7 +142,14 @@ impl Renderer {
             queue,
             surface_configuration: config,
             size,
-            window
+            render_pipeline,
+            window,
+
+            // Color/Vertices
+            color: clear_color,
+            indices,
+            num_vertices,
+            vertex_buffer
         }
     }
 
@@ -91,23 +173,28 @@ impl Renderer {
             label: Some("Render Encoder"),
         });
         {
-            let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let (r, g, b, a) = rgba(255, 255, 255, 255);
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(RenderPassColorAttachment {
                     view: &view,
                     resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
+                    ops: Operations {
+                        load: LoadOp::Clear(Color {
+                            r: r.into(),
+                            g: g.into(),
+                            b: b.into(),
+                            a: a.into(),
                         }),
                         store: true,
                     },
                 })],
                 depth_stencil_attachment: None,
             });
+
+            render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.draw(0..self.num_vertices, 0..self.indices);
         }
 
         // submit will accept anything that implements IntoIter

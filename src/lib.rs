@@ -1,11 +1,9 @@
 pub mod renderer;
+pub mod shapes;
+pub mod helpers;
 
 use renderer::Renderer;
 use winit::dpi::PhysicalSize;
-
-
-
-
 
 use starry_ecs::resources::Resource;
 use starry_ecs::World;
