@@ -1,4 +1,4 @@
-use wgpu::{Surface, Device, Queue, SurfaceConfiguration, Instance, InstanceDescriptor, Backends, Adapter, RequestAdapterOptions, PowerPreference, TextureUsages, DeviceDescriptor, SurfaceError, TextureViewDescriptor, CommandEncoderDescriptor, Color, RenderPassColorAttachment};
+use wgpu::{Surface, Device, Queue, SurfaceConfiguration, Instance, InstanceDescriptor, Backends, TextureUsages, DeviceDescriptor, SurfaceError, TextureViewDescriptor, CommandEncoderDescriptor, Color, RenderPassColorAttachment};
 use winit::{dpi::PhysicalSize, window::Window, event::WindowEvent};
 
 pub struct Renderer {
@@ -75,7 +75,7 @@ impl Renderer {
         &self.window
     }
 
-    pub fn input(&self, event: &WindowEvent) -> bool {
+    pub fn input(&self, _event: &WindowEvent) -> bool {
         false
     }
 

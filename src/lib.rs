@@ -3,16 +3,16 @@ pub mod renderer;
 use renderer::Renderer;
 use winit::dpi::PhysicalSize;
 
-use std::thread::spawn;
-use std::sync::{Arc, Mutex};
-use std::borrow::Cow;
+
+
+
 
 use starry_ecs::resources::Resource;
 use starry_ecs::World;
-use wgpu::Instance;
-use winit::event_loop::{EventLoopBuilder, EventLoop, ControlFlow};
-use winit::platform::wayland::EventLoopBuilderExtWayland;
-use winit::window::WindowBuilder;
+
+use winit::event_loop::{EventLoop, ControlFlow};
+
+
 use winit::event::{Event, WindowEvent, ElementState, VirtualKeyCode, KeyboardInput};
 
 #[derive(Clone)]
