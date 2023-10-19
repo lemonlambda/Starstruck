@@ -1,10 +1,10 @@
-use std::ops::{Add, Mul, Div, Sub};
+use std::ops::{Add, Div, Mul, Sub};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
-    position: [f32; 4],
-    color: [f32; 4],
+    pub position: [f32; 4],
+    pub color: [f32; 4],
 }
 impl Vertex {
     pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
@@ -22,11 +22,21 @@ impl Vertex {
                     shader_location: 1,
                     format: wgpu::VertexFormat::Float32x4,
                 },
-            ]
+            ],
         }
     }
-    pub fn rotate_around(mut self, pitch: f32, roll: f32, yaw: f32, p@(x, y, z): (f32, f32, f32)) -> Self {
+    pub fn rotate_around(
+        mut self,
+        pitch: f32,
+        roll: f32,
+        yaw: f32,
+        p @ (x, y, z): (f32, f32, f32),
+    ) -> Self {
         let (ox, oy, oz) = (-x, -y, -z);
+
+        self.position[0] = self.position[0] + ox;
+        self.position[1] = self.position[1] + oy;
+        self.position[2] = self.position[2] + oz;
 
         self = self.rotate(pitch, roll, yaw);
 
@@ -36,7 +46,7 @@ impl Vertex {
 
         self
     }
-    
+
     pub fn rotate(mut self, pitch: f32, roll: f32, yaw: f32) -> Self {
         let cosa = yaw.to_radians().cos();
         let sina = yaw.to_radians().sin();
@@ -51,11 +61,11 @@ impl Vertex {
         let axy = cosa * sinb * sinc - sina * cosc;
         let axz = cosa * sinb * cosc + sina * sinc;
 
-        let ayx = sina * cosb; 
+        let ayx = sina * cosb;
         let ayy = sina * sinb * sinc + cosa * cosc;
         let ayz = sina * sinb * cosc - cosa * sinc;
 
-        let azx = -sinb ;
+        let azx = -sinb;
         let azy = cosb * sinc;
         let azz = cosb * cosc;
 
@@ -73,41 +83,61 @@ impl Vertex {
 
 impl Add<f32> for Vertex {
     type Output = Vertex;
-    
+
     fn add(self, rhs: f32) -> Self::Output {
         Self {
-            position: [self.position[0] + rhs, self.position[1] + rhs, self.position[2] + rhs, self.position[3]],
-            color: self.color
+            position: [
+                self.position[0] + rhs,
+                self.position[1] + rhs,
+                self.position[2] + rhs,
+                self.position[3],
+            ],
+            color: self.color,
         }
     }
 }
 impl Sub<f32> for Vertex {
     type Output = Vertex;
-    
+
     fn sub(self, rhs: f32) -> Self::Output {
         Self {
-            position: [self.position[0] - rhs, self.position[1] - rhs, self.position[2] - rhs, self.position[3]],
-            color: self.color
+            position: [
+                self.position[0] - rhs,
+                self.position[1] - rhs,
+                self.position[2] - rhs,
+                self.position[3],
+            ],
+            color: self.color,
         }
     }
 }
 impl Mul<f32> for Vertex {
     type Output = Vertex;
-    
+
     fn mul(self, rhs: f32) -> Self::Output {
         Self {
-            position: [self.position[0] * rhs, self.position[1] * rhs, self.position[2] * rhs, self.position[3]],
-            color: self.color
+            position: [
+                self.position[0] * rhs,
+                self.position[1] * rhs,
+                self.position[2] * rhs,
+                self.position[3],
+            ],
+            color: self.color,
         }
     }
 }
 impl Div<f32> for Vertex {
     type Output = Vertex;
-    
+
     fn div(self, rhs: f32) -> Self::Output {
         Self {
-            position: [self.position[0] / rhs, self.position[1] / rhs, self.position[2] / rhs, self.position[3]],
-            color: self.color
+            position: [
+                self.position[0] / rhs,
+                self.position[1] / rhs,
+                self.position[2] / rhs,
+                self.position[3],
+            ],
+            color: self.color,
         }
     }
 }

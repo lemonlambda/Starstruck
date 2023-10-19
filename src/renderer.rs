@@ -1,10 +1,14 @@
 use crate::helpers::rgba;
-use crate::shapes::{Vertex, Rectangle, Cube};
+use crate::shapes::{Cube, Rectangle, Vertex};
 
-use wgpu::{Surface, Device, Queue, SurfaceConfiguration, Instance, InstanceDescriptor, Backends, TextureUsages, DeviceDescriptor, SurfaceError, TextureViewDescriptor, CommandEncoderDescriptor, Color, RenderPassColorAttachment, Operations, LoadOp, RenderPipeline, ShaderModuleDescriptor, ShaderSource, include_wgsl, Buffer};
 use wgpu::util::DeviceExt;
-use winit::{dpi::PhysicalSize, window::Window, event::WindowEvent};
-
+use wgpu::{
+    include_wgsl, Backends, Buffer, Color, CommandEncoderDescriptor, Device, DeviceDescriptor,
+    Instance, InstanceDescriptor, LoadOp, Operations, Queue, RenderPassColorAttachment,
+    RenderPipeline, ShaderModuleDescriptor, ShaderSource, Surface, SurfaceConfiguration,
+    SurfaceError, TextureUsages, TextureViewDescriptor,
+};
+use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 
 pub struct Renderer {
     pub(crate) surface: Surface,
@@ -22,7 +26,7 @@ pub struct Renderer {
     pub(crate) indices: u32,
     pub(crate) vertex_buffer: Buffer,
 }
- 
+
 impl Renderer {
     pub async fn new(window: Window) -> Self {
         let size = window.inner_size();
@@ -41,25 +45,30 @@ impl Renderer {
                 adapter.is_surface_supported(&surface)
             })
             .unwrap();
-        
-        let (device, queue) = adapter.request_device(
-            &DeviceDescriptor {
-                features: wgpu::Features::empty(),
-                limits: if cfg!(target_arch = "wasm32") {
-                    wgpu::Limits::downlevel_webgl2_defaults()
-                } else {
-                    wgpu::Limits::default()
+
+        let (device, queue) = adapter
+            .request_device(
+                &DeviceDescriptor {
+                    features: wgpu::Features::empty(),
+                    limits: if cfg!(target_arch = "wasm32") {
+                        wgpu::Limits::downlevel_webgl2_defaults()
+                    } else {
+                        wgpu::Limits::default()
+                    },
+                    label: None,
                 },
-                label: None,
-            },
-            None,
-        ).await.unwrap();
+                None,
+            )
+            .await
+            .unwrap();
 
         let surface_caps = surface.get_capabilities(&adapter);
 
-        let surface_format = surface_caps.formats.iter()
+        let surface_format = surface_caps
+            .formats
+            .iter()
             .copied()
-            .find(|f| f.is_srgb())            
+            .find(|f| f.is_srgb())
             .unwrap_or(surface_caps.formats[0]);
         let config = SurfaceConfiguration {
             usage: TextureUsages::RENDER_ATTACHMENT,
@@ -73,25 +82,26 @@ impl Renderer {
         surface.configure(&device, &config);
 
         let shader = device.create_shader_module(include_wgsl!("shader.wgsl"));
-        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[],
-            push_constant_ranges: &[],
-        });
+        let render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Render Pipeline Layout"),
+                bind_group_layouts: &[],
+                push_constant_ranges: &[],
+            });
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
             layout: Some(&render_pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
-                entry_point: "vs_main", // 1.
-                buffers: &[
-                    Vertex::desc()
-                ], // 2.
+                entry_point: "vs_main",     // 1.
+                buffers: &[Vertex::desc()], // 2.
             },
-            fragment: Some(wgpu::FragmentState { // 3.
+            fragment: Some(wgpu::FragmentState {
+                // 3.
                 module: &shader,
                 entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState { // 4.
+                targets: &[Some(wgpu::ColorTargetState {
+                    // 4.
                     format: config.format,
                     blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
@@ -111,22 +121,28 @@ impl Renderer {
             },
             depth_stencil: None, // 1.
             multisample: wgpu::MultisampleState {
-                count: 1, // 2.
-                mask: !0, // 3.
+                count: 1,                         // 2.
+                mask: !0,                         // 3.
                 alpha_to_coverage_enabled: false, // 4.
             },
             multiview: None, // 5.
         });
 
-        let (rectangle, indices) = Rectangle::new((0.25, 0.25, 0.5), (0.5, 0.5, -0.5), 1.0, rgba(255, 180, 180, 255), rgba(180, 180, 255, 255)).rotate(45.0, 0.0, 0.0).into_raw();
+        let (rectangle, indices) = Rectangle::new(
+            (0.25, 0.25, 0.5),
+            (0.5, 0.5, -0.5),
+            1.0,
+            rgba(255, 180, 180, 255),
+            rgba(180, 180, 255, 255),
+        )
+        // .rotate_around_center(45.0, 0.0, 0.0)
+        .into_raw();
         println!("{:#?}", rectangle);
-        let vertex_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(rectangle.as_slice()),
-                usage: wgpu::BufferUsages::VERTEX,
-            },
-        );
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(rectangle.as_slice()),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
         let (r, g, b, a) = rgba(255, 255, 255, 255);
         let clear_color = wgpu::Color {
             r: r.into(),
@@ -135,8 +151,8 @@ impl Renderer {
             a: a.into(),
         };
         let num_vertices = rectangle.len() as u32;
-        
-        Self { 
+
+        Self {
             surface,
             device,
             queue,
@@ -149,7 +165,7 @@ impl Renderer {
             color: clear_color,
             indices,
             num_vertices,
-            vertex_buffer
+            vertex_buffer,
         }
     }
 
@@ -161,17 +177,19 @@ impl Renderer {
         false
     }
 
-    pub fn update(&mut self) {
-        
-    }
+    pub fn update(&mut self) {}
 
     pub fn render(&mut self) -> Result<(), SurfaceError> {
         let output = self.surface.get_current_texture()?;
 
-        let view = output.texture.create_view(&TextureViewDescriptor::default());
-        let mut encoder = self.device.create_command_encoder(&CommandEncoderDescriptor {
-            label: Some("Render Encoder"),
-        });
+        let view = output
+            .texture
+            .create_view(&TextureViewDescriptor::default());
+        let mut encoder = self
+            .device
+            .create_command_encoder(&CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
+            });
         {
             let (r, g, b, a) = rgba(255, 255, 255, 255);
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -208,18 +226,20 @@ impl Renderer {
         if x > 0 {
             self.size = PhysicalSize {
                 width: x,
-                height: self.size.height
+                height: self.size.height,
             };
             self.surface_configuration.width = x;
-            self.surface.configure(&self.device, &self.surface_configuration);
+            self.surface
+                .configure(&self.device, &self.surface_configuration);
         }
         if y > 0 {
             self.size = PhysicalSize {
                 width: self.size.width,
-                height: y
+                height: y,
             };
             self.surface_configuration.height = y;
-            self.surface.configure(&self.device, &self.surface_configuration);
+            self.surface
+                .configure(&self.device, &self.surface_configuration);
         }
     }
 }
